@@ -1,0 +1,20 @@
+<include>
+
+    <extension name="callcenter1">
+      <condition field="destination_number" expression="^9200$">
+        <action application="answer"/>
+        <action application="log" data="DEBUG callcenter1 public extention fired"/>
+        <action application="set" data="fifo_orbit_dialplan=XML"/>
+        <action application="set" data="fifo_orbit_context=default"/>
+        <!-- <action application="set" data="fifo_orbit_announce=digits/6.wav"/>  -->
+        <action application="set" data="fifo_caller_exit_key=2"/>
+        <action application="set" data="fifo_caller_exit_to_orbit=true"/>
+        
+        <action application="set" data="hangup_after_bridge=true"/> 
+
+        <action application="fifo" data="sales_fifo_1@$${domain} in undef $${base_dir}/sounds/music/8000/suite-espanola-op-47-leyenda.wav"/>
+
+      </condition>
+    </extension>
+ 
+</include>

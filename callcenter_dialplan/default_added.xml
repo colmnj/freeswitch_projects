@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+    <!-- callcenter1 agent wait -->
+    <extension name="callcenter1agent">
+      <condition field="destination_number" expression="^0201$">
+        <action application="log" data="DEBUG callcenter1 agent wait extention entered"/>
+        <action application="set" data="fifo_music=$${hold_music}"/>
+        <action application="set" data="bind_meta_key=#"/>
+        <action application="bind_meta_app" data="0 a a execute_extension::ccdx XML features"/>
+        <action application="answer"/>
+        <action application="set" data="hangup_after_bridge=true"/> 
+        <action application="fifo" data="fifo_1@$${domain} out wait"/>
+      </condition>
+    </extension>
+
+    <!-- callcenter1 agent login for on-hook wait mode -->
+    <extension name="callcenter1agent">
+      <condition field="destination_number" expression="^0202$">
+        <action application="log" data="INFO callcenter agent wait login ${user_name}"/>
+        <action application="answer"/>
+        <action application="set" data="result=${fifo_member(add fifo_1@$${domain} {fifo_member_wait=nowait}loopback/0${user_name}/default/XML 1 30 10 )"/>
+      </condition>
+    </extension>
+
+    <!-- callcenter1 agent logout -->
+    <extension name="callcenter1agent">
+      <condition field="destination_number" expression="^0203$">
+        <action application="log" data="INFO callcenter agent wait logoff ${user_name}"/>
+        <action application="answer"/>
+        <action application="set" data="result=${fifo_member(del fifo_1@$${domain} {fifo_member_wait=nowait}loopback/0${user_name}/default/XML )"/>
+      </condition>
+    </extension>
+
+
+    <!-- callcenter callout loopback to agent              -->
+    <!-- driven by public dialplan - i.e. customer call in -->
+    <extension name="callcenter1out">
+      <condition field="destination_number" expression="^0(10[0-9]$)">
+        <action application="session_loglevel" data="debug"/>
+        <action application="log" data="DEBUG callcenter1 callout to agent $1"/>
+        <action application="set" data="new_uuid=${create_uuid foo}" inline="true"/>
+        <action application="set" data="res=${bgapi originate {agent=$1,origination_caller_id_number=${caller_id_number},origination_uuid=${new_uuid}}user/$1@$${domain} 0201}"/>  -->
+      </condition>
+    </extension>
+
+    
+    <extension name="callcenter1agent_transfer">
+      <condition field="destination_number" expression="^(10[0-9]$)">
+        <action application="log" data="DEBUG callcenter agent extention called/transfered"/>
+        <action application="set" data="bind_meta_key=#"/>
+        <action application="bind_meta_app" data="0 a a execute_extension::ccdx XML features"/>
+        <action application="set" data="confirm_blind_transfer=true"/>
+        <action application="set" data="continue_on_fail=true"/>
+        <action application="bridge" data="user/$1"/>
+     
+        <action application="set" data="lastagent=${hash(select/${uuid}/lega)}" inline="true"/> 
+        <action application="log" data="INFO callcenter bridge to $1 failed. lastagent=${lastagent}"/> 
+        <!-- callback to last agent -->
+        <condition field="${lastagent}"  expression="^(10[0-9]$)">
+          <action application="log" data="INFO callcenter bridge failed - return to original agent ${lastagent}"/>
+          <action application="hash" data="delete/${uuid}/lega"/>  
+          <action application="bridge" data="user/${lastagent}"/> 
+        </condition>
+      </condition>
+    </extension>
+
+  </context>
+</include>
